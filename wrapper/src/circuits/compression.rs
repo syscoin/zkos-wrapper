@@ -124,7 +124,14 @@ impl CompressionCircuit {
     }
 
     pub fn size_hint(&self) -> (Option<usize>, Option<usize>) {
-        let trace_len = 1 << 16;
+        // The current Security100 recursive verifier exceeds the former 2^16 row
+        // budget. Keep the geometry shared by CPU/GPU setup and proving; this
+        // allocation ceiling is shrunk to the actual domain during finalization.
+        let trace_len = if cfg!(feature = "security_100") {
+            1 << 17
+        } else {
+            1 << 16
+        };
         let max_variables = 1 << 24;
         (Some(trace_len), Some(max_variables))
     }

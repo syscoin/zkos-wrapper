@@ -35,6 +35,12 @@ jobs:
         # from_host_cache roundtrip must preserve the config (including trusted
         # VKs) and the already-loaded binary commitment.
         run:  RUST_MIN_STACK=268435456 cargo test --release -- --nocapture host_cache_roundtrip
+      - name: compression row budget tests
+        # Synthesis/padding only: no CRS, setup, or proof generation. Also retain
+        # the smaller Security80 allocation without changing either geometry.
+        run: |
+          RUST_MIN_STACK=268435456 cargo test -p zkos-wrapper --release compression_row_budget -- --nocapture
+          RUST_MIN_STACK=268435456 cargo test -p zkos-wrapper --release --no-default-features --features security_80 compression_row_budget -- --nocapture
 
   gpu_check:
     name: gpu_check

@@ -1,0 +1,242 @@
+{
+  "fixed_parameters": {
+    "parameters": {
+      "num_columns_under_copy_permutation": 255,
+      "num_witness_columns": 0,
+      "num_constant_columns": 4,
+      "max_allowed_constraint_degree": 4
+    },
+    "lookup_parameters": {
+      "UseSpecializedColumnsWithTableIdAsConstant": {
+        "width": 3,
+        "num_repetitions": 101,
+        "share_table_id": true
+      }
+    },
+    "domain_size": 1048576,
+    "total_tables_len": 230656,
+    "public_inputs_locations": [
+      [
+        0,
+        999326
+      ],
+      [
+        1,
+        999326
+      ],
+      [
+        2,
+        999326
+      ],
+      [
+        3,
+        999326
+      ]
+    ],
+    "extra_constant_polys_for_selectors": 2,
+    "table_ids_column_idxes": [
+      6
+    ],
+    "quotient_degree": 8,
+    "selectors_placement": {
+      "Fork": {
+        "left": {
+          "Fork": {
+            "left": {
+              "Fork": {
+                "left": {
+                  "Fork": {
+                    "left": {
+                      "GateOnly": {
+                        "gate_idx": 1,
+                        "num_constants": 2,
+                        "degree": 3,
+                        "needs_selector": true,
+                        "is_lookup": false
+                      }
+                    },
+                    "right": {
+                      "Fork": {
+                        "left": {
+                          "Fork": {
+                            "left": {
+                              "GateOnly": {
+                                "gate_idx": 6,
+                                "num_constants": 0,
+                                "degree": 2,
+                                "needs_selector": true,
+                                "is_lookup": false
+                              }
+                            },
+                            "right": {
+                              "GateOnly": {
+                                "gate_idx": 4,
+                                "num_constants": 0,
+                                "degree": 0,
+                                "needs_selector": true,
+                                "is_lookup": false
+                              }
+                            }
+                          }
+                        },
+                        "right": {
+                          "GateOnly": {
+                            "gate_idx": 7,
+                            "num_constants": 0,
+                            "degree": 1,
+                            "needs_selector": true,
+                            "is_lookup": false
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "GateOnly": {
+                    "gate_idx": 5,
+                    "num_constants": 0,
+                    "degree": 2,
+                    "needs_selector": true,
+                    "is_lookup": false
+                  }
+                }
+              }
+            },
+            "right": {
+              "GateOnly": {
+                "gate_idx": 3,
+                "num_constants": 1,
+                "degree": 2,
+                "needs_selector": true,
+                "is_lookup": false
+              }
+            }
+          }
+        },
+        "right": {
+          "Fork": {
+            "left": {
+              "GateOnly": {
+                "gate_idx": 2,
+                "num_constants": 4,
+                "degree": 2,
+                "needs_selector": true,
+                "is_lookup": false
+              }
+            },
+            "right": {
+              "GateOnly": {
+                "gate_idx": 0,
+                "num_constants": 4,
+                "degree": 1,
+                "needs_selector": true,
+                "is_lookup": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "fri_lde_factor": 2,
+    "cap_size": 16
+  },
+  "setup_merkle_tree_cap": [
+    [
+      6786813546080039566,
+      4699200469378703412,
+      4200920638463157302,
+      12422413333028595284
+    ],
+    [
+      8680633784504458591,
+      13903689607055785356,
+      4144761146727799026,
+      11234768825898611135
+    ],
+    [
+      1121393049541711756,
+      16378682987055710931,
+      1450657577045632822,
+      12894175742963164591
+    ],
+    [
+      6292704474100237223,
+      5058961656195242339,
+      9145897808940612155,
+      7751389854041476469
+    ],
+    [
+      12692036073374367119,
+      11275466368364715589,
+      8653610481760488525,
+      1568572695542734368
+    ],
+    [
+      3413331232561462265,
+      5602632018530720193,
+      14955235939572014769,
+      8895940095038702763
+    ],
+    [
+      13473382880926936846,
+      9741442667067318107,
+      5260397109736993957,
+      6491215866400977898
+    ],
+    [
+      16027854544299403985,
+      5536679351372677201,
+      12078354106473062214,
+      12192550066087802287
+    ],
+    [
+      14267435196183008797,
+      18075903521994414358,
+      5854863985048736353,
+      18116877070111835378
+    ],
+    [
+      1562878285527732708,
+      14594501847662034048,
+      2170780281615564662,
+      17768338743435593425
+    ],
+    [
+      8173323073747713622,
+      1241287419922344895,
+      18116392753853845399,
+      9202120788528418291
+    ],
+    [
+      13194300966189291822,
+      230176424734952454,
+      13484082809393398361,
+      14445504762319092446
+    ],
+    [
+      5460128654319075792,
+      6339377066739189574,
+      14993936469494739898,
+      4443549363570541982
+    ],
+    [
+      8917711923412983914,
+      4408523112495440467,
+      1647303848785486972,
+      9025006039568172435
+    ],
+    [
+      11879402232848117248,
+      4227181221774089414,
+      9766476835416759196,
+      3678123189354482242
+    ],
+    [
+      18356741776784552386,
+      18207267141820308769,
+      4784643697014511532,
+      1287107208636463925
+    ]
+  ]
+}

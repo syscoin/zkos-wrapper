@@ -1,6 +1,57 @@
 use super::*;
 
 #[test]
+fn compression_row_budget_matches_security_level() {
+    let circuit = crate::circuits::CompressionCircuit::new(None, crate::RiscWrapperVK::default());
+    #[cfg(feature = "security_80")]
+    assert_eq!(circuit.size_hint(), (Some(1 << 16), Some(1 << 24)));
+    #[cfg(feature = "security_100")]
+    assert_eq!(circuit.size_hint(), (Some(1 << 17), Some(1 << 24)));
+}
+
+#[cfg(feature = "security_100")]
+#[test]
+fn compression_row_budget_fits_current_risc_vk() {
+    use crate::circuits::CompressionCircuit;
+    use boojum::{
+        config::SetupCSConfig,
+        cs::{
+            cs_builder::new_builder, cs_builder_reference::CsReferenceImplementationBuilder,
+            traits::circuit::CircuitBuilder,
+        },
+    };
+    // Public sizing fixture retained from the first current-code keygen, which
+    // stopped during compression synthesis. This is not a release-accepted VK.
+    // SHA256: 52c41727ee5e90d4f140c846bf5f21e30c100f8ab8c8ccced66e4008edb7c2f6.
+    let vk: crate::RiscWrapperVK = serde_json::from_str(include_str!(
+        "fixtures/risc-wrapper-security100-sizing.json"
+    ))
+    .unwrap();
+    assert_eq!(vk.fixed_parameters.domain_size, 1 << 20);
+    let circuit = CompressionCircuit::new(None, vk);
+    let geometry = CompressionCircuit::geometry();
+    let (max_rows, max_variables) = circuit.size_hint();
+    let max_rows = max_rows.unwrap();
+    assert_eq!(max_rows, 1 << 17);
+    let builder_impl =
+        CsReferenceImplementationBuilder::<F, F, SetupCSConfig, StCircuitResolver<_, _>>::new(
+            geometry, max_rows,
+        );
+    let builder = new_builder::<_, F>(builder_impl);
+    let builder = CompressionCircuit::configure_builder(builder);
+    let mut cs = builder.build(max_variables.unwrap());
+    circuit.synthesize_into_cs(&mut cs);
+    assert!(cs.next_available_row() < max_rows);
+    let (padded_rows, finalization_hint) = cs.pad_and_shrink();
+    assert_eq!(padded_rows, finalization_hint.final_trace_len);
+    assert!(padded_rows <= max_rows);
+    // The reviewed common-crypto overlay uses 65,538 GP rows / 65,539 with the
+    // copy-permutation reserve, padded to 2^17. Do not require that exact count:
+    // the wrapper's unpatched upstream common-crypto dependency has fewer gates.
+    // This test only synthesizes and pads; it never derives a setup or proof.
+}
+
+#[test]
 pub(crate) fn compression_full_test() {
     let worker = boojum::worker::Worker::new();
 
