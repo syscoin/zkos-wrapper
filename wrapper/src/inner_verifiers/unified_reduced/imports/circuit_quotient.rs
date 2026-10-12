@@ -2628,6 +2628,39 @@ unsafe fn evaluate_every_row_except_last<F: SmallField, CS: ConstraintSystem<F>>
             let contribution = {
                 let individual_term = {
                     let mut individual_term = {
+                        let mut a = *(memory.get_unchecked(27usize));
+                        let b = *(memory.get_unchecked(30usize));
+                        {
+                            let intermediate = b;
+                            a = a.mul(cs, &intermediate)
+                        };
+                        a = a.negated(cs);
+                        a
+                    };
+                    {
+                        let a = *(memory.get_unchecked(27usize));
+                        {
+                            let intermediate = a;
+                            individual_term = individual_term.add(cs, &intermediate)
+                        };
+                    }
+                    individual_term
+                };
+                individual_term
+            };
+            {
+                let intermediate = contribution;
+                accumulated_contribution = accumulated_contribution.add(cs, &intermediate)
+            };
+        }
+        {
+            {
+                let intermediate = quotient_alpha;
+                accumulated_contribution = accumulated_contribution.mul(cs, &intermediate)
+            };
+            let contribution = {
+                let individual_term = {
+                    let mut individual_term = {
                         let mut a = *(memory.get_unchecked(9usize));
                         let b = *(memory.get_unchecked(27usize));
                         {

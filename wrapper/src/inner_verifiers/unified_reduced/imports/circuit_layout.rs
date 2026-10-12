@@ -1539,6 +1539,15 @@ pub const VERIFIER_COMPILED_LAYOUT: VerifierCompiledCircuitArtifact<'static, Mer
             },
             StaticVerifierCompiledDegree2Constraint {
                 quadratic_terms: &[(
+                    Mersenne31Field(2147483646u32),
+                    ColumnAddress::MemorySubtree(27usize),
+                    ColumnAddress::MemorySubtree(30usize),
+                )],
+                linear_terms: &[(Mersenne31Field(1u32), ColumnAddress::MemorySubtree(27usize))],
+                constant_term: Mersenne31Field(0u32),
+            },
+            StaticVerifierCompiledDegree2Constraint {
+                quadratic_terms: &[(
                     Mersenne31Field(1u32),
                     ColumnAddress::MemorySubtree(9usize),
                     ColumnAddress::MemorySubtree(27usize),
