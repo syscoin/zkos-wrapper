@@ -166,3 +166,19 @@ pub type WrappedBlakeProofOutput<F> = WrappedProofOutput<
 >;
 
 include!("../shared/verify_impl.rs");
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn degree_lift_challenge_geometry_matches_airbender() {
+        assert_eq!(
+            ActiveGeometry::DEEP_POLY_TRANSCRIPT_CHALLENGE_ARRAY_SIZE,
+            transcript_challenge_array_size(
+                2 * 4,
+                SECURITY_CONFIG.deep_poly_alpha_pow_bits as usize,
+            )
+        );
+    }
+}

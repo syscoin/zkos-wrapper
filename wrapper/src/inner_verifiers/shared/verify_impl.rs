@@ -1,3 +1,13 @@
+fn lift_deep_expected_value<F: SmallField, CS: ConstraintSystem<F>>(
+    cs: &mut CS,
+    expected_value: MersenneQuartic<F>,
+    evaluation_point: MersenneComplex<F>,
+    lift_offset: MersenneQuartic<F>,
+) -> MersenneQuartic<F> {
+    let lift_factor = lift_offset.add_base(cs, &evaluation_point);
+    expected_value.mul(cs, &lift_factor)
+}
+
 pub fn verify<F: SmallField, CS: ConstraintSystem<F>>(
     cs: &mut CS,
     skeleton: WrappedProofSkeletonInstance<F>,
@@ -211,12 +221,10 @@ pub fn verify<F: SmallField, CS: ConstraintSystem<F>>(
         );
     }
 
-    // draw initial challenge for DEEP-poly
+    // Draw the DEEP linearization challenge and an independent quartic offset
+    // for the degree-restoring lift before the FRI transcript continues.
     let mut transcript_challenges =
-        [UInt32::zero(cs); transcript_challenge_array_size(
-            1usize * 4,
-            SECURITY_CONFIG.deep_poly_alpha_pow_bits as usize,
-        )];
+        [UInt32::zero(cs); ActiveGeometry::DEEP_POLY_TRANSCRIPT_CHALLENGE_ARRAY_SIZE];
     Blake2sWrappedTranscript::draw_randomness_using_hasher(
         cs,
         &mut transcript_hasher,
@@ -232,6 +240,11 @@ pub fn verify<F: SmallField, CS: ConstraintSystem<F>>(
     };
 
     let deep_poly_alpha = MersenneQuartic::from_coeffs(
+        it.next()
+            .unwrap()
+            .map(|el| MersenneField::from_uint32_with_reduction(cs, el)),
+    );
+    let lift_offset = MersenneQuartic::from_coeffs(
         it.next()
             .unwrap()
             .map(|el| MersenneField::from_uint32_with_reduction(cs, el)),
@@ -754,6 +767,11 @@ pub fn verify<F: SmallField, CS: ConstraintSystem<F>>(
                 taus_in_domain_by_half_power,
                 tau_in_domain_by_half_inversed_power,
             );
+
+            // Match the source proof's affine degree lift at the full queried
+            // coset point, before folding changes that point.
+            expected_value =
+                lift_deep_expected_value(cs, expected_value, evaluation_point, lift_offset);
 
             let mut domain_size_log_2 = TRACE_LEN_LOG2;
             // let mut domain_index = domain_index as usize;

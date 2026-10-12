@@ -9,6 +9,7 @@ compile_error!("features `security_80` and `security_100` are mutually exclusive
 #[cfg(all(not(feature = "security_80"), not(feature = "security_100")))]
 compile_error!("one of `security_80` or `security_100` must be enabled");
 
+mod buffered_os_rng;
 pub mod circuits;
 mod inner_verifiers;
 pub mod interface;
@@ -26,7 +27,6 @@ use boojum::cs::implementations::witness;
 use boojum::field::U64Representable;
 pub use unified_reduced_machine_verifier as risc_verifier;
 
-use bellman::rand;
 use boojum::algebraic_props::round_function::AbsorptionModeOverwrite;
 use boojum::algebraic_props::sponge::GoldilocksPoseidon2Sponge;
 use boojum::config::{ProvingCSConfig, SetupCSConfig};
@@ -74,6 +74,16 @@ pub(crate) mod active_security {
     #[cfg(feature = "security_100")]
     pub(crate) const ACTIVE_SECURITY_MODEL: crate::risc_verifier::verifier_common::SecurityModel =
         crate::risc_verifier::verifier_common::SecurityModel::Security100;
+}
+
+/// Security level selected by this wrapper's enabled feature, for authenticating
+/// precomputed binary commitments without deriving recursion-layer setups.
+pub const fn binary_commitment_security_bits() -> u32 {
+    use risc_verifier::verifier_common::SecurityModel;
+    match active_security::ACTIVE_SECURITY_MODEL {
+        SecurityModel::Security80 => 80,
+        SecurityModel::Security100 => 100,
+    }
 }
 
 pub type GL = boojum::field::goldilocks::GoldilocksField;
@@ -250,7 +260,13 @@ pub fn prove_risc_wrapper(
 pub fn verify_risc_wrapper_proof(proof: &RiscWrapperProof, vk: &RiscWrapperVK) -> bool {
     let verifier_builder = RiscWrapperCircuitBuilder::dyn_verifier_builder();
     let verifier = verifier_builder.create_verifier();
-    verifier.verify::<RiscWrapperTreeHasher, RiscWrapperTranscript, NoPow>((), vk, proof)
+    let expected_proof_config = RiscWrapper::get_proof_config();
+    verifier.verify::<RiscWrapperTreeHasher, RiscWrapperTranscript, NoPow>(
+        (),
+        vk,
+        proof,
+        &expected_proof_config,
+    )
 }
 
 // Stark -> Stark Compression
@@ -352,7 +368,13 @@ pub fn prove_compression(
 pub fn verify_compression_proof(proof: &CompressionProof, vk: &CompressionVK) -> bool {
     let verifier_builder = CompressionCircuitBuilder::dyn_verifier_builder();
     let verifier = verifier_builder.create_verifier();
-    verifier.verify::<CompressionTreeHasher, CompressionTranscript, NoPow>((), vk, proof)
+    let expected_proof_config = CompressionCircuit::get_proof_config();
+    verifier.verify::<CompressionTreeHasher, CompressionTranscript, NoPow>(
+        (),
+        vk,
+        proof,
+        &expected_proof_config,
+    )
 }
 
 // Stark -> Snark Wrapper
@@ -447,7 +469,7 @@ pub fn prove_snark_wrapper(
         tracing::info!("using zk (padding) proving");
         const NUM_PADDING_TERMS: usize = 2 + 2 + 2; // worst case witness polys are opened at 2 points, plus there are
         // indirect openings of grand product for permutation and for lookup
-        let mut rng = rand::rngs::OsRng;
+        let mut rng = buffered_os_rng::BufferedOsRng::new();
         assembly.finalize_to_size_log_2_with_randomization(
             L1_VERIFIER_DOMAIN_SIZE_LOG,
             NUM_PADDING_TERMS,

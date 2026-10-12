@@ -92,6 +92,27 @@ impl SnarkWrapper {
         })
     }
 
+    /// Build a wrapper using a precomputed commitment for the configured program.
+    ///
+    /// The caller must authenticate the commitment against the exact base and recursion
+    /// binaries and active security configuration before calling this constructor. This
+    /// does not validate those inputs by recomputing their commitment. All ordinary
+    /// constructor validation, setup derivation, and proof verification remain enabled.
+    pub fn new_with_binary_commitment(
+        config: SnarkWrapperConfig,
+        binary_commitment: BinaryCommitment,
+    ) -> anyhow::Result<Self> {
+        let mut wrapper = Self::new(config)?;
+        wrapper.binary_commitment = Some(binary_commitment);
+        Ok(wrapper)
+    }
+
+    /// Return this session's binary commitment, deriving and caching it on first use
+    /// after [`Self::new`], or reusing the value from [`Self::new_with_binary_commitment`].
+    pub fn resolved_binary_commitment(&mut self) -> anyhow::Result<BinaryCommitment> {
+        self.binary_commitment()
+    }
+
     /// Build a wrapper that adopts the setup caches (and configuration) of a previous
     /// session. See [`SnarkWrapperHostCache`].
     pub fn from_host_cache(cache: SnarkWrapperHostCache) -> anyhow::Result<Self> {
@@ -423,6 +444,83 @@ mod tests {
             check_aux_params: true,
             ..SnarkWrapperConfig::default()
         }
+    }
+
+    #[test]
+    fn precomputed_commitment_security_matches_enabled_feature() {
+        #[cfg(feature = "security_80")]
+        assert_eq!(crate::binary_commitment_security_bits(), 80);
+        #[cfg(feature = "security_100")]
+        assert_eq!(crate::binary_commitment_security_bits(), 100);
+    }
+
+    #[test]
+    fn precomputed_commitment_preserves_values_config_and_host_cache() {
+        let commitment = BinaryCommitment {
+            end_params: [17; 8],
+            aux_params: [29; 8],
+        };
+        // These files do not exist: resolving the supplied commitment must not read
+        // them or compute any recursion-layer setups.
+        let config = SnarkWrapperConfig {
+            bin: Some(PathBuf::from("missing-precomputed-test.bin")),
+            text: Some(PathBuf::from("missing-precomputed-test.text")),
+            threads: Some(1),
+            check_aux_params: true,
+            ..SnarkWrapperConfig::default()
+        };
+        let mut wrapper = SnarkWrapper::new_with_binary_commitment(config, commitment)
+            .expect("precomputed wrapper is created");
+        let resolved = wrapper.resolved_binary_commitment().unwrap();
+        assert_eq!(resolved.end_params, commitment.end_params);
+        assert_eq!(resolved.aux_params, commitment.aux_params);
+        assert!(wrapper.config.check_aux_params);
+        assert_eq!(wrapper.config.threads, Some(1));
+        let mut restored = SnarkWrapper::from_host_cache(wrapper.into_host_cache()).unwrap();
+        let resolved = restored.resolved_binary_commitment().unwrap();
+        assert_eq!(resolved.end_params, commitment.end_params);
+        assert_eq!(resolved.aux_params, commitment.aux_params);
+        assert!(restored.config.check_aux_params);
+    }
+
+    #[test]
+    fn precomputed_commitment_preserves_constructor_validation() {
+        let commitment = BinaryCommitment {
+            end_params: [17; 8],
+            aux_params: [29; 8],
+        };
+        let mismatched_paths = SnarkWrapperConfig {
+            bin: Some(PathBuf::from("only-one-path.bin")),
+            ..SnarkWrapperConfig::default()
+        };
+        let error = SnarkWrapper::new_with_binary_commitment(mismatched_paths, commitment)
+            .err()
+            .expect("one binary path must remain invalid");
+        assert!(error.to_string().contains("Both --bin and --text"));
+
+        let directory = tempfile::tempdir().unwrap();
+        let invalid_setup = SnarkWrapperConfig {
+            trusted_setup: Some(directory.path().to_path_buf()),
+            ..SnarkWrapperConfig::default()
+        };
+        let error = SnarkWrapper::new_with_binary_commitment(invalid_setup, commitment)
+            .err()
+            .expect("a directory must remain invalid as a trusted setup");
+        assert!(
+            error
+                .to_string()
+                .contains("Trusted setup path must point to a file")
+        );
+    }
+
+    #[test]
+    fn precomputed_commitment_does_not_change_legacy_lazy_constructor() {
+        let config = SnarkWrapperConfig {
+            threads: Some(1),
+            ..config_with_base_program()
+        };
+        let wrapper = SnarkWrapper::new(config).unwrap();
+        assert!(wrapper.binary_commitment.is_none());
     }
 
     #[test]
